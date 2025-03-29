@@ -1,0 +1,43 @@
+@font-face {
+    font-family: 'museo-sans';
+    src: url(./font/museosans_500-webfont.woff2) format('woff2'),
+         url(./font/museosans_500-webfont.woff) format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'museo-sans';
+    src: url(./font/museosans_500_italic-webfont.woff2) format('woff2'),
+         url(./font/museosans_500_italic-webfont.woff) format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: museo-sans, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body, html {
+  font-family: museo-sans, sans-serif;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+/*
+* Override the default CSS that will screw with the React-Calendar styling we want.
+*/
+abbr[title], acronym[title] {
+  text-decoration: none;
+}
+
+input, textarea, select, button {
+  font-family: museo-sans, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

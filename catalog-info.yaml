@@ -1,0 +1,57 @@
+# Tyrion-managed Backstage catalog entity (customize per https://wiki.faa.gov/display/ACP/Backstage+Catalog+Entities)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  annotations:
+    argocd/app-selector: faa.gov/App=uast,faa.gov/Env
+    backstage.io/kubernetes-label-selector: faa.gov/App=uast
+    backstage.io/linguist: https://git.faa.gov/projects/uast/repos/uasts-app-internal/browse
+    datadoghq.com/site: ddog-gov.com
+    sonarqube.org/project-key: uast-uasts-app-internal.git
+    tektonci/build-namespace: tekton-app-uast
+    tektonci/pipeline-label-selector: repo-slug=uasts-app-internal
+    tyrion.faa.gov/image-repo: uast/*/uasts-app-internal
+    vault.io/secrets-path: uast/
+  links:
+  - title: Source Code - Bitbucket
+    type: tyrion:bitbucket-code
+    url: https://git.faa.gov/projects/uast/repos/uasts-app-internal/browse
+  - title: Builds - Tekton
+    type: tyrion:tekton-build
+    url: https://tekton.mgmt.tyrion.faa.gov/#/namespaces/tekton-app-uast/pipelineruns?labelSelector=repo-slug%3Duasts-app-internal
+  - title: Images - Artifactory
+    type: tyrion:artifactory-image
+    url: https://artifactory.faa.gov/ui/repos/tree/General/faa-docker/uast/
+  - title: Image Scans - Aqua Security
+    type: tyrion:aquasec
+    url: https://aquasec.faa.gov/#/dashboard
+  - title: Deployment - Argo CD
+    type: tyrion:argocd-project
+    url: https://argocd.mgmt.tyrion.faa.gov/applications?search=&proj=uast
+  - title: Secrets Nonprod - Vault Dev
+    type: tyrion:d-vault-customer
+    url: https://dev.vault.faa.gov:8200/ui/vault/auth?namespace=tyrion%2Fcustomer&with=oidc
+  - title: Secrets Prod - Vault
+    type: tyrion:prod-vault-customer
+    url: https://vault.faa.gov:8200/ui/vault/auth?namespace=tyrion%2Fcustomer&with=oidc
+  - title: Observability - Datadog
+    type: tyrion:datadog-dashboard
+    url: https://faa.ddog-gov.com/dashboard/zbj-g75-vub/tyrion-application-deployments-overview?tpl_var_faa.gov%2Fapp%5B0%5D=uast
+  - title: Pods - Datadog
+    type: tyrion:datadog-pods
+    url: https://faa.ddog-gov.com/orchestration/overview/pod?query=label%23faa.gov%2FApp%3Auast
+  - title: Synthetics - Datadog
+    type: tyrion:datadog-synthetics
+    url: https://faa.ddog-gov.com/synthetics/tests?query=team%3A%28uast%29
+  - title: Logs - Datadog
+    type: tyrion:datadog-logs
+    url: https://faa.ddog-gov.com/logs?query=faa.gov%2Fapp%3Auast
+  - title: Events - Datadog
+    type: tyrion:datadog-events
+    url: https://faa.ddog-gov.com/event/explorer?query=faa.gov%2Fapp%3Auast
+  name: uasts-app-internal
+spec:
+  lifecycle: production
+  owner: uast-team
+  system: uasts
+  type: website

@@ -1,0 +1,8 @@
+tekton:
+  branch_strategy: git-flow
+  build:
+    tool: "angular"
+    notification_email: "AFN-UASTRUST@faa.gov,APP-AIT-TRUST-PRD@faa.gov"
+    image_resources:
+      limits:
+        memory: 4Gi

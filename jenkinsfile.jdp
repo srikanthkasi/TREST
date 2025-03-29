@@ -1,0 +1,145 @@
+def TARGET_ENV = ''
+def UPLOAD_TO_ARTIFACTORY = true;
+
+pipeline {
+    parameters {
+        choice(
+                choices: ["", "dev" ,"test" ,"preprod" , "prod"],
+                description: "Build For Environment",
+                name: "TARGET_ENVIRONMENT"
+            )
+    }
+
+    agent {
+        label "linux"
+    }
+    tools {
+        nodejs "16.14.2"
+        jdk '11.0.9+11.1'
+    }
+
+	options {
+        skipStagesAfterUnstable()
+    }
+ 
+    stages {
+
+		stage("Sonarqube Scan"){
+        tools {
+                jdk '11.0.9+11.1'
+            }
+          steps{
+                echo "========executing the scan========"
+                runSonarQubeScan()
+          }
+        }
+
+        stage("Set-Taget"){
+            steps {
+                script {
+
+                    if(params.TARGET_ENVIRONMENT == "dev") {
+                        TARGET_ENV = "dev";
+                    } else if(params.TARGET_ENVIRONMENT == "test") {
+                        TARGET_ENV = "dev";
+                    } else if(params.TARGET_ENVIRONMENT == "preprod") {
+                        TARGET_ENV = "dev";
+                    } else if(params.TARGET_ENVIRONMENT == "prod") {
+                        TARGET_ENV = "prod";
+                    } else {
+                        if("${GIT_BRANCH}".contains("prerelease/UASTS-RC-")) {
+                            TARGET_ENV = "dev";
+                        } else if("${GIT_BRANCH}".contains("release/UASTS-RC-")) {
+                            TARGET_ENV = "prod";
+                        } else if("${GIT_BRANCH}".contains("develop")) {
+                            TARGET_ENV = "dev";
+                        } else if("${GIT_BRANCH}".contains("integration")) {
+                            TARGET_ENV = "dev";
+                        } else {
+                            TARGET_ENV = "dev";
+                            UPLOAD_TO_ARTIFACTORY = false;
+                        }
+                    }
+
+                }
+
+                echo "***************** build for environment selected = ${params.TARGET_ENVIRONMENT} ********************"
+                echo "***************** GIT_BRANCH = ${GIT_BRANCH} ********************"
+                echo "***************** target environment = ${TARGET_ENV} ********************"
+                echo "***************** UPLOAD_TO_ARTIFACTORY = ${UPLOAD_TO_ARTIFACTORY} ********************"
+
+            }
+        }
+
+        stage("Build"){
+            steps {
+                echo "*****************build for environment dev ********************"
+                sh "node -v"
+                sh "npm ci"
+                sh "npm run build:${TARGET_ENV}"
+                sh "rm -f *.tar.gz"
+                sh "tar -C ./build -zcvf uasts-app-internal.tar.gz ."
+            }
+
+        }
+
+		stage("Send to Artifactory"){
+            when { expression { UPLOAD_TO_ARTIFACTORY == true } }
+
+            steps{
+                echo "========Sending up server info========"
+                rtServer (
+                    id: "Artifactory-1",
+                    url: "https://artifactory.faa.gov/artifactory",
+                    credentialsId: "uastrust-deployer"
+                )
+                echo "====++++Deloying Artifacts++++===="
+
+
+                rtUpload (
+                    serverId: "Artifactory-1",
+                    spec: """{
+                            "files": [
+                                    {
+                                        "pattern": "uasts-app-internal.tar.gz",
+                                        "target": "faa-uast/gov/faa/app/${GIT_BRANCH}/",
+                                        "props": "vault=vaultfilehere;version=v2;Last.Change=${GIT_COMMITTER_NAME};Branch=${GIT_BRANCH}"
+                                    }
+                                ]
+                            }"""
+                )
+            }
+            post{
+                always{
+                    echo "====++++always++++===="
+                }
+                success{
+                    echo "Result: Success!"
+					echo "Stage: Send to Artifactory Finished."
+                }
+                failure{
+                    echo "Result: Failed!"
+					echo "Stage: Send to Artifactory Failed."
+                }
+            }
+        }
+
+    }
+
+    post {
+        always {
+            deleteDir()
+            cleanWs cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: false, cleanWhenUnstable: true, notFailBuild: true
+        }
+        success {
+            emailext from: "build@faa.gov", body: "${BUILD_URL}", subject: "build success for ${JOB_NAME}", to: "siddaraju.ctr.srikantaiah@faa.gov; madhusudhan.ctr.chellappa@faa.gov"
+        }
+        failure {
+            emailext from: "build@faa.gov", body: "${BUILD_URL}", subject: "build failure for ${JOB_NAME}", to: "siddaraju.ctr.srikantaiah@faa.gov; madhusudhan.ctr.chellappa@faa.gov"
+        }
+        unstable {
+            emailext from: "build@faa.gov", body: "${BUILD_URL}", subject: "build unstable for ${JOB_NAME}", to: "siddaraju.ctr.srikantaiah@faa.gov; madhusudhan.ctr.chellappa@faa.gov"
+        }
+    }
+
+}
